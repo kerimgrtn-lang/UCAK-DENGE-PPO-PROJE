@@ -52,9 +52,9 @@ class AircraftEnv:   # Uçağımızın simülasyon ortamı
         self.current_step += 1  # Model [-1,1] üretir. → Gerçek dereceye çeviriyoruz.
        
         # Ajanın [-1, 1] arası ürettiği aksiyonlar, uçağın fiziksel açı değiştirme sınırlarına (~12 derece) ölçekliyoruz.Aksiyon ölçekliyoruz.
-        action_pitch = action[0] * 12.0
+        action_pitch = action[0] * 12.0  
         action_yaw = action[1] * 12.0
-        action_aoa = action[2] * 10.0
+        action_aoa = action[2] * 10.0   
         
         # Rüzgarın zamansal değişimi (Random Walk) ve %30 olasılıkla anlık şiddetli türbülans darbesi kısmımız.
         self.wind_effect += np.random.normal(0, 0.3)   #rüzgar etkisini 0.6 dam 0.3 düşürdük  
@@ -79,13 +79,13 @@ class AircraftEnv:   # Uçağımızın simülasyon ortamı
         reward = 0.0
         reward -= 0.1 * (self.pitch ** 2)   # Denge noktasından (0) uzaklaştıkça karesel ceza    
         reward -= 0.20 * (self.yaw ** 2)     # Denge noktasından (0) uzaklaştıkça karesel ceza  # katsayıyı 0.1 den 0.2 ye çektik. 
-        reward -= 0.15 * (self.aoa ** 2)  
+        reward -= 0.15 * (self.aoa ** 2)     
         reward -= 0.01 * np.sum(action ** 2)   # Kontrol yüzeylerinin aşırı titremesini engelleme cezası(gereksiz hareket cezası)
 
         # Kararlılık ödül bonusu (Açılar +/- 1 derecenin altındaysa ek puan veriyoruz.)
-        if abs(self.pitch) < 1.0 and abs(self.yaw) < 1.0 and abs(self.aoa) < 1.0:
-            reward += 15.0  #stabil ise bonus
-
+        if abs(self.pitch) < 1.0 and abs(self.yaw) < 1.0 and abs(self.aoa) < 1.0:   
+            reward += 15.0  #stabil ise bonus 
+            
          # --- İSTERLERİN TOLERANS KONTROLLERİ VE KIRIM DURUMU ---
         done = False  #Çarpışma durumu
         if abs(self.pitch) > 50.0 or abs(self.yaw) > 30.0 or self.aoa < -15.0 or self.aoa > 15.0:  #Uçak kontrolden çıkarsa
@@ -301,7 +301,12 @@ ax_cockpit.set_aspect('equal')
 ax_cockpit.grid(True, color='gray', linestyle='--', alpha=0.4)
 ax_cockpit.set_title("Canlı Suni Ufuk Kokpit Göstergesi", fontweight='bold', color='darkgreen')
 ax_cockpit.axhline(0, color='green', linewidth=1.5)
-plane_body, = ax_cockpit.plot([], [], 'ro-', linewidth=4, markersize=8, label='Uçak Kanadı')
+ax_cockpit.axvline(0, color='green', linewidth=1.5, linestyle=':') ###### Merkez dikey referans çizgisi yaw açısı için ekledik.
+
+# GÖRSELLEŞTİRME ÇUBUKLARI (PITCH VE YAW İÇİN) kokpitte göreceğiz
+plane_body, = ax_cockpit.plot([], [], 'ro-', linewidth=4, markersize=8, label='pitch(yatay kısım)')
+yaw_bar, = ax_cockpit.plot([], [], 'bo-', linewidth=4, markersize=8, label='Yaw(Dikey kısım)') #######YENİ: Yaw Çubuğu için yine kokpitte göstermek için ekledik.
+
 wind_arrow = ax_cockpit.annotate('', xy=(0,0), xytext=(0,0), arrowprops=dict(facecolor='orange', width=1.5, headwidth=5))
 ax_cockpit.legend(loc='upper left')
 info_text = ax_cockpit.text(-38, -37, '', fontsize=9, bbox=dict(facecolor='white', alpha=0.8))
@@ -373,6 +378,12 @@ def animate(i):
     x_coords = [-wing_span * np.cos(theta), wing_span * np.cos(theta)]
     y_coords = [p - wing_span * np.sin(theta), p + wing_span * np.sin(theta)]
     plane_body.set_data(x_coords, y_coords)
+
+    ###### # Mavi Çubuk: Yaw (Sapma) Hareketi (Yeni Eklediğimiz Kısım )
+    # Yaw değeri değiştikçe x ekseninde sağa/sola kayan dikey bir çubuğumuz
+    yaw_x = [y, y]
+    yaw_y = [-wing_span, wing_span]
+    yaw_bar.set_data(yaw_x, yaw_y)    
     
     global wind_arrow
     wind_arrow.remove()
